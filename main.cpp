@@ -5,7 +5,9 @@
 #include <algorithm>
 
 int lev(std::string, std::string);
-int lev_impl(std::string, int, std::string, int);
+
+int lev_impl(std::string, int, std::string, int, std::vector<std::vector<int> > &);
+
 int levSlow(std::string, std::string);
 
 int main() {
@@ -19,10 +21,11 @@ int main() {
     testCases.emplace_back("", "hello");
     testCases.emplace_back("dogsarecoolyestheyare", "dogsarelityestheyare");
     testCases.emplace_back("goodbye", "hello");
+    testCases.emplace_back("fjdkafjdafjdkajfdkafjkl", "fdafdjalfjdsalfjdsfjslfdsafdsafdas");
 
 
     for (auto test: testCases) {
-        std::cout << levSlow(test.first, test.second) << " ";
+        //std::cout << levSlow(test.first, test.second) << " ";
         std::cout << lev(test.first, test.second) << std::endl;
     }
 
@@ -52,25 +55,39 @@ int levSlow(std::string s1, std::string s2) {
 }
 
 // Wrapper to avoid having to pass the length of the string
-int lev(std::string s1, std::string s2){
-    return lev_impl(s1, s1.size(), s2,s2.size());
+int lev(std::string s1, std::string s2) {
+    int n1 = s1.size();
+    int n2 = s2.size();
+    std::vector<std::vector<int> > cache(n1 + 1, std::vector<int>(n2 + 1, -1));
+    return lev_impl(s1, n1, s2, n2, cache);
 }
 
-int lev_impl(std::string s1, int n1, std::string s2, int n2) {
+int lev_impl(std::string s1, int n1, std::string s2, int n2, std::vector<std::vector<int> > &cache) {
+    // If there's something in the cache, return that
+    if (cache[n1][n2] != -1) return cache[n1][n2];
+
     // If s1 is empty, we have to add as many characters as there are in s2 to s1 for them to match
-    if (n1 == 0) return n2;
+    if (n1 == 0) {
+        cache[n1][n2] = n2;
+        return cache[n1][n2];
+    }
         // If s2 is empty, we have to delete as many characters as there are in s1 to get s2 for them to match
-    else if (n2 == 0) return n1;
+    else if (n2 == 0) {
+        cache[n1][n2] = n1;
+        return cache[n1][n2];
+    }
         // If the two strings have the same final character, we can somewhat ignore them and move on.
-    else if (s1[n1-1] == s2[n2 - 1]) {
-        return lev_impl(s1, n1 - 1, s2, n2 - 1);
+    else if (s1[n1 - 1] == s2[n2 - 1]) {
+        cache[n1][n2] = lev_impl(s1, n1 - 1, s2, n2 - 1, cache);
+        return cache[n1][n2];
     } else {
-        return 1 + std::min(
+        cache[n1][n2] = 1 + std::min(
                 {
-                        lev_impl(s1, n1 - 1, s2, n2), // Removing a character
-                        lev_impl(s1, n1, s2, n2 - 1), // Adding a character
-                        lev_impl(s1, n1 -1, s2, n2 - 1) // Replacing a character
+                        lev_impl(s1, n1 - 1, s2, n2, cache), // Removing a character
+                        lev_impl(s1, n1, s2, n2 - 1, cache), // Adding a character
+                        lev_impl(s1, n1 - 1, s2, n2 - 1, cache) // Replacing a character
                 }
         );
+        return cache[n1][n2];
     }
 }
